@@ -1,0 +1,8 @@
+WINDOW_WIDTH = 800
+WINDOW_HEIGHT = 600
+FPS = 60
+CELL_SIZE = 20
+
+# Цвета
+BLACK = (0, 0, 0)
+GREEN = (0, 200, 0)

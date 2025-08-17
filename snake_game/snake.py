@@ -4,13 +4,13 @@ from config import CELL_SIZE, GREEN
 class Snake:
     def __init__(self, speed):
         # Позиция головы в пикселях
-        self.head_pos = [5 * CELL_SIZE, 5 * CELL_SIZE]
+        self.head_pos = [10 * CELL_SIZE, 10 * CELL_SIZE]
         # Длина змейки в клетках
         self.length = 20
         # Список сегментов (позиции в пикселях)
         self.body = [self.head_pos.copy() for _ in range(self.length)]
         # Текущее направление движения (dx, dy) в пикселях за кадр
-        self.direction = [speed, 0]
+        self.direction = [0, 0]
         # Направление, которое игрок хочет установить
         self.next_direction = self.direction.copy()
         self.speed = speed

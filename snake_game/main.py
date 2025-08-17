@@ -2,6 +2,8 @@ import pygame
 import sys
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, FPS, BLACK, CELL_SIZE, GREEN
 from snake import Snake
+from food import Food
+
 
 def main():
     pygame.init()
@@ -13,6 +15,8 @@ def main():
     # Скорость змейки в пикселях за кадр
     snake_speed = 4
     snake = Snake(snake_speed)
+
+    food = Food(snake)
 
     running = True
     while running:
@@ -32,11 +36,18 @@ def main():
 
         # --- Логика ---
         snake.move()
+        if snake.head_pos == food.position:
+            snake.length += 1  # увеличиваем длину
+            food = Food(snake)  # создаём новую еду
 
         # --- Отрисовка ---
         screen.fill(BLACK)
         snake.draw(screen)
+        food.draw(screen)
         pygame.display.flip()
+
+
+
 
         # --- Ограничение FPS ---
         clock.tick(FPS)

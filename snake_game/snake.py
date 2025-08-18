@@ -17,6 +17,7 @@ class Snake:
         # Список клеток, где произошли повороты
         self.turn_cells = []
 
+
     def change_direction(self, dx, dy):
         new_dir = [dx * self.speed, dy * self.speed]
         if new_dir != [-self.direction[0], -self.direction[1]]:
@@ -56,6 +57,8 @@ class Snake:
 
     def grow(self, cells=1):
         self.length += cells
+
+
 
     def draw(self, screen):
         # Рисуем тело плавно

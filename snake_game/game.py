@@ -17,7 +17,7 @@ class Game:
 
     def reset(self):
         """Начало новой игры"""
-        self.snake = Snake(speed=4)
+        self.snake = Snake(speed=10)
         self.food = Food(self.snake)
 
     def handle_events(self):
@@ -39,7 +39,7 @@ class Game:
     def update(self):
         self.snake.move()
         # Проверка: съела ли змейка еду
-        if self.snake.head_pos == self.food.position:
+        if self.food.check_collision(self.snake):
             self.snake.grow(1)
             self.food = Food(self.snake)
 

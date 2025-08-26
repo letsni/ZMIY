@@ -20,7 +20,7 @@ class Game:
     def reset(self, level=None):
         """Начало новой игры"""
         if level is None:
-            from levels.level1 import Level1
+            from levels.level1_diff import Level1
             level = Level1
         self.selected_level = level
         self.snake = Snake(speed=level.get_speed())

@@ -1,8 +1,8 @@
 import pygame
 from config import WHITE, WINDOW_WIDTH, WINDOW_HEIGHT
-from levels.level1 import Level1
-from levels.level2 import Level2
-from levels.level3 import Level3
+from levels.level1_diff import Level1Difficulty
+from levels.level2_diff import Level2Difficulty
+from levels.level3_diff import Level3Difficulty
 
 class Menu:
     def __init__(self, screen):
@@ -17,7 +17,7 @@ class Menu:
         self.selected_index = 0
 
         # Уровни сложности
-        self.levels = [Level1, Level2, Level3]
+        self.levels = [Level1Difficulty, Level2Difficulty, Level3Difficulty]
         self.selected_level = 0
         self.menu_items[1] = f"Сложность: {self.levels[self.selected_level].name}"
 

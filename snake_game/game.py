@@ -5,6 +5,7 @@ from food import Food
 
 class Game:
     def __init__(self, screen):
+        self.selected_map = None
         self.game_over_selected = 0
         self.paused_frame = None
         self.screen = screen
@@ -17,14 +18,16 @@ class Game:
         self.font = pygame.font.SysFont("Arial", 40)
         self.selected_level = None
 
-    def reset(self, level=None):
+    def reset(self, level=None, level_map=None):
         """Начало новой игры"""
         if level is None:
             from levels.level1_diff import Level1
             level = Level1
         self.selected_level = level
+        self.selected_map = level_map  # сохраняем выбранную карту
         self.snake = Snake(speed=level.get_speed())
         self.food = Food(self.snake)
+        #TODO: в будущем можно использовать level_map для расстановки препятствий
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -104,20 +107,27 @@ class Game:
         from menu import Menu
         menu = Menu(self.screen)
 
-        pause_selected = 0  # выбранный пункт паузы
-
         while self.running:
             if self.state == "MENU":
                 next_state, selected_level = menu.handle_events()
                 menu.draw()
                 if next_state == "GAME" and selected_level:
-                    self.reset(level=selected_level)
-                    self.state = "GAME"
+                    self.selected_level_difficulty = selected_level
+                    self.state = "MAP_SELECTION"  # после выбора уровня — карта
                 elif next_state == "EXIT":
                     self.running = False
                 elif next_state == "CUSTOMIZATION":
                     self.state = "CUSTOMIZATION"
 
+            elif self.state == "MAP_SELECTION":
+                next_state, selected_map = menu.handle_map_selection()
+                menu.draw_map_selection()
+                if next_state == "GAME" and selected_map:
+                    # передаём и сложность, и карту в reset()
+                    self.reset(level=self.selected_level_difficulty, level_map=selected_map)
+                    self.state = "GAME"
+                elif next_state == "EXIT":
+                    self.state = "MENU"
             elif self.state == "GAME":
                 self.handle_events()
                 self.update()

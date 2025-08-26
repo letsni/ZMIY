@@ -3,9 +3,17 @@ from config import WHITE, WINDOW_WIDTH, WINDOW_HEIGHT
 from levels.level1_diff import Level1Difficulty
 from levels.level2_diff import Level2Difficulty
 from levels.level3_diff import Level3Difficulty
+from levels.level1_map import Level1Map
+from levels.level2_map import Level2Map
+from levels.level3_map import Level3Map
+from levels.level4_map import Level4Map
+
+
 
 class Menu:
     def __init__(self, screen):
+        self.maps = [Level1Map, Level2Map, Level3Map, Level4Map]
+        self.selected_map_index = 0
         self.screen = screen
         self.font = pygame.font.SysFont("Arial", 40)
         self.menu_items = [
@@ -30,6 +38,18 @@ class Menu:
             self.screen.blit(text, rect)
         pygame.display.flip()
 
+    def draw_map_selection(self):
+        self.screen.fill((0, 0, 0))
+        text = self.font.render("Выберите карту:", True, (255, 255, 255))
+        self.screen.blit(text, (50, 50))
+
+        for i, map_cls in enumerate(self.maps):
+            color = (200, 200, 0) if i == self.selected_map_index else (255, 255, 255)
+            level_text = self.font.render(f"{i + 1}. {map_cls.name}", True, color)
+            self.screen.blit(level_text, (100, 100 + i * 40))
+
+        pygame.display.flip()
+
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -51,3 +71,16 @@ class Menu:
                     elif self.selected_index == 3:  # Выход
                         return "EXIT", None
         return "MENU", None
+
+    def handle_map_selection(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return "EXIT", None
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    self.selected_map_index = (self.selected_map_index - 1) % len(self.maps)
+                elif event.key == pygame.K_DOWN:
+                    self.selected_map_index = (self.selected_map_index + 1) % len(self.maps)
+                elif event.key == pygame.K_RETURN:
+                    return "GAME", self.maps[self.selected_map_index]
+        return "MAP_SELECTION", None

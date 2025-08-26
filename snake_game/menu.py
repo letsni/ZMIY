@@ -1,36 +1,32 @@
 import pygame
-import os
 from config import WHITE, WINDOW_WIDTH, WINDOW_HEIGHT
+from levels.level1 import Level1
+from levels.level2 import Level2
+from levels.level3 import Level3
 
 class Menu:
     def __init__(self, screen):
         self.screen = screen
         self.font = pygame.font.SysFont("Arial", 40)
+        self.menu_items = [
+            "Играть",
+            "Сложность: Лёгкая",
+            "Кастомизация",
+            "Выход"
+        ]
+        self.selected_index = 0
 
-        # Находим все файлы уровней
-        self.level_files = sorted([f for f in os.listdir("levels") if f.startswith("level") and f.endswith(".py")])
-        # Создаём имена уровней через классы
-        self.level_classes = []
-        for file in self.level_files:
-            module_name = f"levels.{file[:-3]}"  # убираем .py
-            level_module = __import__(module_name, fromlist=["*"])
-            # ищем первый класс в модуле
-            for attr in dir(level_module):
-                obj = getattr(level_module, attr)
-                if isinstance(obj, type):
-                    self.level_classes.append(obj)
-                    break
-
-        self.options = [lvl.name for lvl in self.level_classes]
-        self.options.append("Выход")
-        self.selected = 0
+        # Уровни сложности
+        self.levels = [Level1, Level2, Level3]
+        self.selected_level = 0
+        self.menu_items[1] = f"Сложность: {self.levels[self.selected_level].name}"
 
     def draw(self):
         self.screen.fill((0, 0, 0))
-        for i, option in enumerate(self.options):
-            color = WHITE if i == self.selected else (100, 100, 100)
-            text = self.font.render(option, True, color)
-            rect = text.get_rect(center=(WINDOW_WIDTH//2, WINDOW_HEIGHT//2 + i*50))
+        for i, item in enumerate(self.menu_items):
+            color = WHITE if i != self.selected_index else (200, 200, 50)
+            text = self.font.render(item, True, color)
+            rect = text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + i * 60))
             self.screen.blit(text, rect)
         pygame.display.flip()
 
@@ -40,11 +36,18 @@ class Menu:
                 return "EXIT", None
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
-                    self.selected = (self.selected - 1) % len(self.options)
+                    self.selected_index = (self.selected_index - 1) % len(self.menu_items)
                 elif event.key == pygame.K_DOWN:
-                    self.selected = (self.selected + 1) % len(self.options)
+                    self.selected_index = (self.selected_index + 1) % len(self.menu_items)
                 elif event.key == pygame.K_RETURN:
-                    if self.selected == len(self.options) - 1:
+                    if self.selected_index == 0:  # Играть
+                        return "GAME", self.levels[self.selected_level]
+                    elif self.selected_index == 1:  # Сложность
+                        self.selected_level = (self.selected_level + 1) % len(self.levels)
+                        self.menu_items[1] = f"Сложность: {self.levels[self.selected_level].name}"
+                    elif self.selected_index == 2:  # Кастомизация
+                        # пока заглушка
+                        print("Кастомизация (пока не реализована)")
+                    elif self.selected_index == 3:  # Выход
                         return "EXIT", None
-                    return "GAME", self.level_classes[self.selected]
         return "MENU", None

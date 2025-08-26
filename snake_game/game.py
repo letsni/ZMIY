@@ -8,16 +8,20 @@ class Game:
         self.screen = screen
         self.clock = pygame.time.Clock()
         self.running = True
-        self.state = "MENU"  # начальное состояние
+        self.state = "MENU"  # MENU, GAME, GAME_OVER, CUSTOMIZATION
 
-        # Эти объекты создадим при reset()
         self.snake = None
         self.food = None
         self.font = pygame.font.SysFont("Arial", 40)
+        self.selected_level = None  # сохраняем уровень, выбранный в меню
 
-    def reset(self):
+    def reset(self, level=None):
         """Начало новой игры"""
-        self.snake = Snake(speed=10)
+        if level is None:
+            from levels.level1 import Level1
+            level = Level1
+        self.selected_level = level
+        self.snake = Snake(speed=level.get_speed())
         self.food = Food(self.snake)
 
     def handle_events(self):
@@ -34,16 +38,16 @@ class Game:
                 elif event.key == pygame.K_RIGHT:
                     self.snake.change_direction(1, 0)
                 elif event.key == pygame.K_ESCAPE:
-                    self.state = "MENU"  # выход в меню
+                    self.state = "MENU"
 
     def update(self):
         self.snake.move()
-        # Проверка: съела ли змейка еду
+        # Еда
         if self.food.check_collision(self.snake):
             self.snake.grow(1)
             self.food = Food(self.snake)
 
-        # проверка: не врезалась ли змейка
+        # Столкновение с собой
         if self.snake.head_pos in self.snake.body[1:]:
             self.state = "GAME_OVER"
 
@@ -65,38 +69,39 @@ class Game:
         self.screen.blit(text2, rect2)
         pygame.display.flip()
 
-    def reset(self, level=None):
-        """Начало новой игры с выбранным уровнем"""
-        if level:
-            self.snake = Snake(speed=level.get_speed())
-            self.food = Food(self.snake)
-            self.obstacles = level.get_obstacles()
-        else:
-            self.snake = Snake(speed=10)
-            self.food = Food(self.snake)
-            self.obstacles = []
+    def draw_customization(self):
+        """Простейшая заглушка для кастомизации"""
+        self.screen.fill((30, 30, 30))
+        text1 = self.font.render("Кастомизация (пока не реализована)", True, WHITE)
+        text2 = self.font.render("Нажми ESC для выхода в меню", True, WHITE)
+
+        rect1 = text1.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 40))
+        rect2 = text2.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 40))
+
+        self.screen.blit(text1, rect1)
+        self.screen.blit(text2, rect2)
+        pygame.display.flip()
 
     def run(self):
         from menu import Menu
         menu = Menu(self.screen)
-        selected_level = 0
 
         while self.running:
             if self.state == "MENU":
-                next_state, level = menu.handle_events()
+                next_state, selected_level = menu.handle_events()
                 menu.draw()
-                if next_state == "GAME":
-                    selected_level = level
+                if next_state == "GAME" and selected_level:
                     self.reset(level=selected_level)
                     self.state = "GAME"
                 elif next_state == "EXIT":
                     self.running = False
+                elif next_state == "CUSTOMIZATION":
+                    self.state = "CUSTOMIZATION"
 
             elif self.state == "GAME":
                 self.handle_events()
                 self.update()
                 self.draw()
-
 
             elif self.state == "GAME_OVER":
                 for event in pygame.event.get():
@@ -104,11 +109,19 @@ class Game:
                         self.running = False
                     elif event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_RETURN:  # рестарт
-                            self.reset()
+                            self.reset(level=self.selected_level)
                             self.state = "GAME"
                         elif event.key == pygame.K_ESCAPE:  # выход в меню
                             self.state = "MENU"
                 self.draw_game_over()
 
+            elif self.state == "CUSTOMIZATION":
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        self.running = False
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:  # выход в меню
+                            self.state = "MENU"
+                self.draw_customization()
 
             self.clock.tick(FPS)

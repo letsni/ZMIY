@@ -1,6 +1,6 @@
 class Level2:
     name = "Средний"
-    speed = 6
+    speed = 10
     obstacles = []
 
     @classmethod

@@ -65,18 +65,29 @@ class Game:
         self.screen.blit(text2, rect2)
         pygame.display.flip()
 
-
+    def reset(self, level=None):
+        """Начало новой игры с выбранным уровнем"""
+        if level:
+            self.snake = Snake(speed=level.get_speed())
+            self.food = Food(self.snake)
+            self.obstacles = level.get_obstacles()
+        else:
+            self.snake = Snake(speed=10)
+            self.food = Food(self.snake)
+            self.obstacles = []
 
     def run(self):
         from menu import Menu
         menu = Menu(self.screen)
+        selected_level = 0
 
         while self.running:
             if self.state == "MENU":
-                next_state = menu.handle_events()
+                next_state, level = menu.handle_events()
                 menu.draw()
                 if next_state == "GAME":
-                    self.reset()
+                    selected_level = level
+                    self.reset(level=selected_level)
                     self.state = "GAME"
                 elif next_state == "EXIT":
                     self.running = False

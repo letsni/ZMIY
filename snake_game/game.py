@@ -11,23 +11,25 @@ class Game:
         self.screen = screen
         self.clock = pygame.time.Clock()
         self.running = True
-        self.state = "MENU"  # MENU, GAME, GAME_OVER, CUSTOMIZATION, PAUSE
+        self.state = "MENU"  # MENU, MAP_SELECTION, GAME, GAME_OVER, CUSTOMIZATION, PAUSE, LEADERBOARD
         self.pause_selected = 0
         self.snake = None
         self.food = None
         self.font = pygame.font.SysFont("Arial", 40)
         self.selected_level = None
+        self.score = 0  # ← ДОБАВЛЕНО: счёт игрока
 
     def reset(self, level=None, level_map=None):
         """Начало новой игры"""
         if level is None:
-            from levels.level1_diff import Level1
-            level = Level1
+            from levels.level1_diff import Level1Difficulty
+            level = Level1Difficulty
         self.selected_level = level
         self.selected_map = level_map  # сохраняем выбранную карту
         self.snake = Snake(speed=level.get_speed())
         self.food = Food(self.snake)
-        #TODO: в будущем можно использовать level_map для расстановки препятствий
+        self.score = 0  # ← ДОБАВЛЕНО: обнуляем счёт
+        # TODO: в будущем можно использовать level_map для расстановки препятствий
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -46,8 +48,7 @@ class Game:
                     if self.state == "GAME":
                         self.state = "PAUSE"
                         self.pause_selected = 0
-                        # сохраняем текущий кадр
-                        self.paused_frame = self.screen.copy()
+                        self.paused_frame = self.screen.copy()  # сохраняем текущий кадр
                     elif self.state == "PAUSE":
                         self.state = "GAME"
 
@@ -56,20 +57,27 @@ class Game:
         if self.food.check_collision(self.snake):
             self.snake.grow(1)
             self.food = Food(self.snake)
+            # ← ДОБАВЛЕНО: начисляем очки за еду
+            points = int(10 * self.selected_level.get_score_multiplier())
+            self.score += points
 
         if self.snake.head_pos in self.snake.body[1:]:
             self.state = "GAME_OVER"
+            self.save_score()  # ← ДОБАВЛЕНО: сохраняем результат в таблицу лидеров
 
     def draw(self):
         self.screen.fill(BLACK)
         self.snake.draw(self.screen)
         self.food.draw(self.screen)
+
+        # ← ДОБАВЛЕНО: рисуем счёт в левом верхнем углу
+        score_text = self.font.render(f"Счёт: {self.score}", True, WHITE)
+        self.screen.blit(score_text, (10, 10))
+
         pygame.display.flip()
 
     def draw_game_over(self, selected_option):
         self.screen.fill(BLACK)
-
-        # затем полупрозрачный слой (можно убрать, если не нужно)
         overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         self.screen.blit(overlay, (0, 0))
@@ -84,22 +92,41 @@ class Game:
         pygame.display.flip()
 
     def draw_pause_menu(self):
-        # используем сохранённый кадр
         if self.paused_frame:
             self.screen.blit(self.paused_frame, (0, 0))
-
-        # накладываем полупрозрачный слой
         overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 150))
         self.screen.blit(overlay, (0, 0))
 
-        # рисуем пункты меню
         options = ["Продолжить", "Главное меню", "Сохранить и выйти"]
         for i, option in enumerate(options):
             color = (200, 200, 0) if i == self.pause_selected else (255, 255, 255)
             text = self.font.render(option, True, color)
             rect = text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 40 + i * 60))
             self.screen.blit(text, rect)
+
+        pygame.display.flip()
+
+    # ← ДОБАВЛЕНО: метод сохранения очков в файл
+    def save_score(self):
+        with open("leaderboard.txt", "a", encoding="utf-8") as f:
+            f.write(f"{self.selected_level.name}: {self.score}\n")
+
+    # ← ДОБАВЛЕНО: метод отображения таблицы лидеров
+    def draw_leaderboard(self):
+        self.screen.fill((30, 30, 30))
+        try:
+            with open("leaderboard.txt", "r", encoding="utf-8") as f:
+                lines = f.readlines()[-5:]  # показываем последние 5 игр
+        except FileNotFoundError:
+            lines = ["Нет данных"]
+
+        title = self.font.render("Таблица лидеров", True, WHITE)
+        self.screen.blit(title, (WINDOW_WIDTH // 2 - title.get_width() // 2, 50))
+
+        for i, line in enumerate(reversed(lines)):
+            text = self.font.render(line.strip(), True, WHITE)
+            self.screen.blit(text, (100, 150 + i * 50))
 
         pygame.display.flip()
 
@@ -123,11 +150,11 @@ class Game:
                 next_state, selected_map = menu.handle_map_selection()
                 menu.draw_map_selection()
                 if next_state == "GAME" and selected_map:
-                    # передаём и сложность, и карту в reset()
                     self.reset(level=self.selected_level_difficulty, level_map=selected_map)
                     self.state = "GAME"
                 elif next_state == "EXIT":
                     self.state = "MENU"
+
             elif self.state == "GAME":
                 self.handle_events()
                 self.update()
@@ -154,8 +181,6 @@ class Game:
 
                 self.draw_pause_menu()
 
-
-
             elif self.state == "GAME_OVER":
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -169,11 +194,11 @@ class Game:
                             if self.game_over_selected == 0:  # Перезапустить уровень
                                 self.reset(level=self.selected_level)
                                 self.state = "GAME"
-                            elif self.game_over_selected == 1:  # Таблица лидеров (заглушка)
+                            elif self.game_over_selected == 1:  # Таблица лидеров
                                 self.state = "LEADERBOARD"
                             elif self.game_over_selected == 2:  # Выйти в меню
                                 self.state = "MENU"
-                        elif event.key == pygame.K_ESCAPE:  # тоже можно выйти в меню
+                        elif event.key == pygame.K_ESCAPE:
                             self.state = "MENU"
                 self.draw_game_over(self.game_over_selected)
 
@@ -197,12 +222,6 @@ class Game:
                     elif event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE:
                             self.state = "GAME_OVER"  # возвращаемся обратно в меню Game Over
-
-                # Рисуем заглушку
-                self.screen.fill((30, 30, 30))
-                text = self.font.render("Таблица лидеров (заглушка)", True, WHITE)
-                rect = text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2))
-                self.screen.blit(text, rect)
-                pygame.display.flip()
+                self.draw_leaderboard()  # ← ЗАМЕНА заглушки на реальную таблицу
 
             self.clock.tick(FPS)

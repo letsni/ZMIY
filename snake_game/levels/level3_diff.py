@@ -1,7 +1,7 @@
 class Level3Difficulty:
     name = "Сложный"
     speed = 20
-    score_multiplier = 5.0
+    score_multiplier = 10.0
 
     @classmethod
     def get_speed(cls):

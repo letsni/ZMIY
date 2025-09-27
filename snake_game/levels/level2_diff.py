@@ -1,7 +1,7 @@
 class Level2Difficulty:
     name = "Средний"
     speed = 10
-    score_multiplier = 2.0  # коэффициент для очков
+    score_multiplier = 3.0  # коэффициент для очков
 
     @classmethod
     def get_speed(cls):

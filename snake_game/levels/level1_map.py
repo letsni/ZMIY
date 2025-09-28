@@ -1,21 +1,22 @@
-from config import WINDOW_WIDTH, WINDOW_HEIGHT, CELL_SIZE
+from config import WINDOW_WIDTH, WINDOW_HEIGHT, CELL_SIZE, HUD_HEIGHT
+
 class Level1Map:
     name = "Уровень 1"
 
-    # создаём прямоугольную рамку вокруг поля
     obstacles = []
+
     cols = WINDOW_WIDTH // CELL_SIZE
-    rows = WINDOW_HEIGHT // CELL_SIZE
+    rows = (WINDOW_HEIGHT - HUD_HEIGHT) // CELL_SIZE  # игровое поле без HUD
 
-    # верх и низ
+    # верхняя и нижняя границы
     for x in range(cols):
-        obstacles.append([x, 0])              # верхняя граница
-        obstacles.append([x, rows - 1])       # нижняя граница
+        obstacles.append([x, 0])           # верхняя граница поля (с учётом HUD в Game.py)
+        obstacles.append([x, rows - 1])    # нижняя граница
 
-    # лево и право
+    # левая и правая границы
     for y in range(rows):
-        obstacles.append([0, y])              # левая граница
-        obstacles.append([cols - 1, y])       # правая граница
+        obstacles.append([0, y])           # левая граница
+        obstacles.append([cols - 1, y])    # правая граница
 
     @classmethod
     def get_obstacles(cls):

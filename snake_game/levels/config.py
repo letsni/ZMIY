@@ -8,3 +8,4 @@ BLACK = (0, 0, 0)
 GREEN = (0, 200, 0)
 RED = (200,0,0)
 WHITE = (255, 255, 255)
+HUD_HEIGHT = 80

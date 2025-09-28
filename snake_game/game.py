@@ -39,10 +39,12 @@ class Game:
         if level is None:
             from levels.level1_diff import Level1Difficulty
             level = Level1Difficulty
+
         self.selected_level = level
-        self.selected_map = level_map
+        if level_map is not None:
+            self.selected_map = level_map
         self.snake = Snake(speed=level.get_speed())
-        self.food = Food(self.snake)
+        self.food = Food(self.snake, level_map=self.selected_map)
         self.score = 0
         self.player_name = ""
 
@@ -73,7 +75,7 @@ class Game:
         # Проверка съеденной еды
         if self.food.check_collision(self.snake):
             self.snake.grow(1)
-            self.food = Food(self.snake)
+            self.food = Food(self.snake, level_map=self.selected_map)
             points = int(10 * self.selected_level.get_score_multiplier())
             self.score += points
 
@@ -85,12 +87,18 @@ class Game:
             self.state = "NAME_INPUT"
             return
 
+
+
+        head_rect = pygame.Rect(self.snake.head_pos[0], self.snake.head_pos[1], CELL_SIZE, CELL_SIZE)
+
         # Столкновение с препятствиями карты
         if self.selected_map:
-            obstacles = self.selected_map.get_obstacles()
-            if [self.snake.head_pos[0], self.snake.head_pos[1]] in obstacles:
-                self.final_score = self.score
-                self.state = "NAME_INPUT"
+            for obs in self.selected_map.get_obstacles():
+                obs_rect = pygame.Rect(obs[0] * CELL_SIZE, obs[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+                if head_rect.colliderect(obs_rect):
+                    self.final_score = self.score
+                    self.state = "NAME_INPUT"
+                    return
 
     def draw(self):
         self.screen.fill(BLACK)
@@ -102,7 +110,7 @@ class Game:
         self.snake.draw(self.screen)
         self.food.draw(self.screen)
         score_text = self.font.render(f"Счёт: {self.score}", True, WHITE)
-        self.screen.blit(score_text, (10, 10))
+        self.screen.blit(score_text, (10, 550))
         pygame.display.flip()
 
     def draw_game_over(self, selected_option):
@@ -224,32 +232,35 @@ class Game:
         title_color = (200, 200, 0) if self.leaderboard_selected == 0 else WHITE
         title_text = f"<  {map_name}  >"
         title = self.font.render(title_text, True, title_color)
-        self.screen.blit(title, (WINDOW_WIDTH // 2 - title.get_width() // 2, 50))
+        self.screen.blit(title, (WINDOW_WIDTH // 2 - title.get_width() // 2, 30))  # подняли заголовок
 
         # Таблица
         scores = self.load_scores(map_name)
+        table_font = pygame.font.SysFont("Arial", 24)  # немного меньше шрифт для таблицы
         if not scores:
-            text = self.font.render("Нет данных", True, WHITE)
-            self.screen.blit(text, (100, 150))
+            text = table_font.render("Нет данных", True, WHITE)
+            self.screen.blit(text, (100, 120))
         else:
             headers = ["Имя", "Счёт", "Дата"]
             col_widths = [200, 100, 150]
             x_start = 150
+            # заголовки
             for i, header in enumerate(headers):
-                text = self.small_font.render(header, True, WHITE)
-                self.screen.blit(text, (x_start + sum(col_widths[:i]), 120))
+                text = table_font.render(header, True, WHITE)
+                self.screen.blit(text, (x_start + sum(col_widths[:i]), 80))  # подняли заголовки таблицы
 
+            # строки таблицы
             for row_idx, (name, score, date) in enumerate(scores):
-                y = 160 + row_idx * 40
+                y = 120 + row_idx * 30  # сдвинули строки выше и уменьшили шаг
                 row = [name, str(score), date]
                 for col_idx, cell in enumerate(row):
-                    text = self.small_font.render(cell, True, WHITE)
+                    text = table_font.render(cell, True, WHITE)
                     self.screen.blit(text, (x_start + sum(col_widths[:col_idx]), y))
 
         # Кнопка "Назад"
         back_color = (200, 200, 0) if self.leaderboard_selected == 1 else WHITE
         back_text = self.font.render("Назад", True, back_color)
-        rect = back_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT - 80))
+        rect = back_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT - 60))  # немного выше от нижнего края
         self.screen.blit(back_text, rect)
 
         pygame.display.flip()
@@ -356,7 +367,7 @@ class Game:
                             self.game_over_selected = (self.game_over_selected + 1) % 3
                         elif event.key == pygame.K_RETURN:
                             if self.game_over_selected == 0:
-                                self.reset(level=self.selected_level)
+                                self.reset(level=self.selected_level, level_map=self.selected_map)
                                 self.state = "GAME"
                             elif self.game_over_selected == 1:
                                 self.state = "LEADERBOARD"

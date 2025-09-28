@@ -1,7 +1,7 @@
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, CELL_SIZE, HUD_HEIGHT
 
 class Level1Map:
-    name = "Уровень 1"
+    name = "Пустое поле"
 
     obstacles = []
 

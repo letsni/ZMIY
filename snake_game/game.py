@@ -106,11 +106,21 @@ class Game:
         if self.selected_map:
             for obs in self.selected_map.get_obstacles():
                 rect = pygame.Rect(obs[0] * CELL_SIZE, obs[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-                pygame.draw.rect(self.screen, (100, 100, 100), rect)  # красная рамка
+                pygame.draw.rect(self.screen, (100, 100, 100), rect)
+
         self.snake.draw(self.screen)
         self.food.draw(self.screen)
         score_text = self.font.render(f"Счёт: {self.score}", True, WHITE)
         self.screen.blit(score_text, (10, 550))
+        hud_font = pygame.font.SysFont("Arial", 28)
+        if self.selected_map:
+            map_text = hud_font.render(f"{self.selected_map.name}", True, WHITE)
+            self.screen.blit(map_text, (260, 560))
+
+        if self.selected_level:
+            level_text = hud_font.render(f"{self.selected_level.name}", True, WHITE)
+            self.screen.blit(level_text, (600, 560))
+
         pygame.display.flip()
 
     def draw_game_over(self, selected_option):
@@ -118,6 +128,11 @@ class Game:
         overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         self.screen.blit(overlay, (0, 0))
+
+        game_over_font = pygame.font.SysFont("Arial", 60, bold=True)
+        game_over_text = game_over_font.render("Игра окончена", True, (200, 50, 50))
+        game_over_rect = game_over_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 120))
+        self.screen.blit(game_over_text, game_over_rect)
 
         options = ["Перезапустить уровень", "Таблица лидеров", "Выйти в меню"]
         for i, option in enumerate(options):
@@ -134,7 +149,7 @@ class Game:
         overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 150))
         self.screen.blit(overlay, (0, 0))
-        options = ["Продолжить", "Главное меню", "Сохранить и выйти"]
+        options = ["Продолжить", "Выбор уровня", "Выйти"]
         for i, option in enumerate(options):
             color = (200, 200, 0) if i == self.pause_selected else WHITE
             text = self.font.render(option, True, color)
@@ -144,6 +159,7 @@ class Game:
 
     # === ЛИДЕРБОРД ===
     def save_score(self):
+
         """Сохраняет результат в формате: name;map;score;date"""
         name = self.player_name.strip() or "Безымянный"
         date = datetime.date.today().isoformat()
@@ -296,8 +312,8 @@ class Game:
                     self.state = "MAP_SELECTION"
                 elif next_state == "EXIT":
                     self.running = False
-                elif next_state == "CUSTOMIZATION":
-                    self.state = "CUSTOMIZATION"
+                elif next_state == "ABOUT":
+                    self.state = "ABOUT"
 
             elif self.state == "MAP_SELECTION":
                 next_state, selected_map = menu.handle_map_selection()
@@ -326,7 +342,7 @@ class Game:
                             if self.pause_selected == 0:
                                 self.state = "GAME"
                             elif self.pause_selected == 1:
-                                self.state = "MENU"
+                                self.state = "MAP_SELECTION"
                             elif self.pause_selected == 2:
                                 self.state = "MENU"
                         elif event.key == pygame.K_ESCAPE:
@@ -334,27 +350,30 @@ class Game:
                 self.draw_pause_menu()
 
             elif self.state == "NAME_INPUT":
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        self.running = False
-                    elif event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_RETURN:
-                            self.save_score()
-                            self.state = "GAME_OVER"
-                        elif event.key == pygame.K_BACKSPACE:
-                            self.player_name = self.player_name[:-1]
-                        else:
-                            if event.unicode.isprintable():
-                                if len(self.player_name) < 10:
-                                    test_text = self.font.render(self.player_name + event.unicode, True, (200, 200, 0))
-                                    if test_text.get_width() < WINDOW_WIDTH - 100:
-                                        self.player_name += event.unicode
+                if self.final_score > 0:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            self.running = False
+                        elif event.type == pygame.KEYDOWN:
+                            if event.key == pygame.K_RETURN:
+                                self.save_score()
+                                self.state = "GAME_OVER"
+                            elif event.key == pygame.K_BACKSPACE:
+                                self.player_name = self.player_name[:-1]
+                            else:
+                                if event.unicode.isprintable():
+                                    if len(self.player_name) < 10:
+                                        test_text = self.font.render(self.player_name + event.unicode, True, (200, 200, 0))
+                                        if test_text.get_width() < WINDOW_WIDTH - 100:
+                                            self.player_name += event.unicode
 
-                self.cursor_timer += 1
-                if self.cursor_timer >= FPS // 2:
-                    self.cursor_visible = not self.cursor_visible
-                    self.cursor_timer = 0
-                self.draw_name_input()
+                    self.cursor_timer += 1
+                    if self.cursor_timer >= FPS // 2:
+                        self.cursor_visible = not self.cursor_visible
+                        self.cursor_timer = 0
+                    self.draw_name_input()
+                else:
+                    self.state = "GAME_OVER"
 
             elif self.state == "GAME_OVER":
                 for event in pygame.event.get():
@@ -377,17 +396,34 @@ class Game:
                             self.state = "MENU"
                 self.draw_game_over(self.game_over_selected)
 
-            elif self.state == "CUSTOMIZATION":
+
+            elif self.state == "ABOUT":
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         self.running = False
                     elif event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_ESCAPE:
+                        if event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
                             self.state = "MENU"
-                self.screen.fill((30, 30, 30))
-                text = self.font.render("Кастомизация (пока заглушка)", True, WHITE)
-                rect = text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2))
-                self.screen.blit(text, rect)
+                self.screen.fill((20, 20, 20))
+                lines = [
+                    "Об игре",
+                    "",
+                    "Цель: набрать как можно больше очков,",
+                    "съедая еду и избегая столкновений",
+                    "с собственным телом и препятствиями.",
+                    "",
+                    "Управление:",
+                    "Стрелки ← ↑ → ↓  — движение змейки",
+                    "ESC — пауза / выход в меню",
+                    "Enter — выбор в меню",
+                    "",
+                    "Нажмите Enter или ESC, чтобы вернуться"
+                ]
+
+                for i, line in enumerate(lines):
+                    text = self.small_font.render(line, True, WHITE)
+                    rect = text.get_rect(center=(WINDOW_WIDTH // 2, 100 + i * 40))
+                    self.screen.blit(text, rect)
                 pygame.display.flip()
 
 

@@ -1,5 +1,5 @@
 class Level2Difficulty:
-    name = "Средний"
+    name = "Средная (x3.0)"
     speed = 10
     score_multiplier = 3.0  # коэффициент для очков
 

@@ -1,5 +1,5 @@
 class Level1Difficulty:
-    name = "Лёгкий"
+    name = "Лёгкая (x1.0)"
     speed = 5          # пикселей за кадр
     score_multiplier = 1.0  # коэффициент для очков
 

@@ -1,5 +1,5 @@
 class Level3Difficulty:
-    name = "Сложный"
+    name = "Сложная (x10.0)"
     speed = 20
     score_multiplier = 10.0
 
